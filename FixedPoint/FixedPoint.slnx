@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/CoreGame.FixedPoint/CoreGame.FixedPoint.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/CoreGame.FixedPoint.Tests/CoreGame.FixedPoint.Tests.csproj" />
+  </Folder>
+</Solution>

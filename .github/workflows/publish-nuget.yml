@@ -1,0 +1,87 @@
+name: Publish NuGet Package
+
+# Trigger: tag with package prefix, e.g. "fixedpoint/v0.1.0"
+# Convention: tag prefix = folder name in repo (case-insensitive match)
+on:
+  push:
+    tags:
+      - '*/v*'
+  workflow_dispatch:
+    inputs:
+      package:
+        description: 'Package folder name (e.g. FixedPoint)'
+        required: true
+      version:
+        description: 'Package version (e.g. 0.1.0 or 0.1.0-preview.1)'
+        required: true
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Determine package and version
+        id: info
+        run: |
+          if [ -n "${{ github.event.inputs.package }}" ]; then
+            PACKAGE="${{ github.event.inputs.package }}"
+            VERSION="${{ github.event.inputs.version }}"
+          elif [[ "$GITHUB_REF" == refs/tags/* ]]; then
+            TAG="${GITHUB_REF#refs/tags/}"
+            # Split "fixedpoint/v0.1.0" into package prefix and version
+            PACKAGE="${TAG%%/v*}"
+            VERSION="${TAG#*/v}"
+          else
+            echo "::error::Could not determine package and version"
+            exit 1
+          fi
+
+          # Validate version
+          if ! echo "$VERSION" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.]+)?$'; then
+            echo "::error::Invalid version string: '$VERSION'"
+            exit 1
+          fi
+
+          # Find the matching folder (case-insensitive)
+          FOLDER=$(find . -maxdepth 1 -type d -iname "$PACKAGE" | head -1 | sed 's|^\./||')
+          if [ -z "$FOLDER" ]; then
+            echo "::error::Package folder '$PACKAGE' not found in repo root"
+            exit 1
+          fi
+
+          # Find the solution file
+          SLNX=$(find "$FOLDER" -maxdepth 1 -name "*.slnx" | head -1)
+          if [ -z "$SLNX" ]; then
+            echo "::error::No .slnx found in '$FOLDER'"
+            exit 1
+          fi
+
+          echo "package=$FOLDER" >> $GITHUB_OUTPUT
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "slnx=$SLNX" >> $GITHUB_OUTPUT
+          echo "Package: $FOLDER, Version: $VERSION, Solution: $SLNX"
+
+      - name: Build
+        run: dotnet build ${{ steps.info.outputs.slnx }} -c Release -p:Version=${{ steps.info.outputs.version }} --nologo
+
+      - name: Run tests
+        timeout-minutes: 5
+        run: dotnet test ${{ steps.info.outputs.slnx }} -c Release --no-build --nologo
+
+      - name: Pack
+        run: dotnet pack ${{ steps.info.outputs.slnx }} -c Release --no-build -p:Version=${{ steps.info.outputs.version }} -o ./nupkgs --nologo
+
+      - name: List packages
+        run: ls -la ./nupkgs/
+
+      - name: Push to NuGet
+        run: dotnet nuget push "./nupkgs/*.nupkg" --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate

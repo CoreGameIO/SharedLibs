@@ -1,0 +1,19 @@
+{
+  "name": "com.coregame.fixedpoint",
+  "version": "0.1.0",
+  "displayName": "CoreGame FixedPoint",
+  "description": "Deterministic fixed-point arithmetic (Q48.16) for game logic. Integer-only, cross-platform deterministic.",
+  "unity": "6000.0",
+  "unityRelease": "0f1",
+  "dependencies": {},
+  "keywords": [
+    "fixed-point",
+    "deterministic",
+    "math",
+    "game"
+  ],
+  "author": {
+    "name": "CoreGame.IO",
+    "url": "https://coregame.io"
+  }
+}

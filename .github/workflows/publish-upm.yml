@@ -1,0 +1,104 @@
+name: Publish UPM Package
+
+# Trigger: tag with package prefix, e.g. "fixedpoint/v0.1.0"
+# Convention: tag prefix = folder name in repo (case-insensitive match)
+# Publishes UPM package to branch "upm/<package>" and tags "upm/<package>/v<version>"
+on:
+  push:
+    tags:
+      - '*/v*'
+  workflow_dispatch:
+    inputs:
+      package:
+        description: 'Package folder name (e.g. FixedPoint)'
+        required: true
+      version:
+        description: 'Package version (e.g. 0.1.0)'
+        required: true
+
+jobs:
+  publish-upm:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Determine package and version
+        id: info
+        run: |
+          if [ -n "${{ github.event.inputs.package }}" ]; then
+            PACKAGE="${{ github.event.inputs.package }}"
+            VERSION="${{ github.event.inputs.version }}"
+          elif [[ "$GITHUB_REF" == refs/tags/* ]]; then
+            TAG="${GITHUB_REF#refs/tags/}"
+            PACKAGE="${TAG%%/v*}"
+            VERSION="${TAG#*/v}"
+          else
+            echo "::error::Could not determine package and version"
+            exit 1
+          fi
+
+          if ! echo "$VERSION" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.]+)?$'; then
+            echo "::error::Invalid version string: '$VERSION'"
+            exit 1
+          fi
+
+          # Find the matching folder (case-insensitive)
+          FOLDER=$(find . -maxdepth 1 -type d -iname "$PACKAGE" | head -1 | sed 's|^\./||')
+          if [ -z "$FOLDER" ]; then
+            echo "::error::Package folder '$PACKAGE' not found in repo root"
+            exit 1
+          fi
+
+          # Find the UPM package folder (com.coregame.*)
+          UPM_DIR=$(find "$FOLDER" -maxdepth 1 -type d -name "com.coregame.*" | head -1)
+          if [ -z "$UPM_DIR" ]; then
+            echo "::error::No UPM package folder (com.coregame.*) found in '$FOLDER'"
+            exit 1
+          fi
+
+          # Derive branch name from folder name (lowercase)
+          BRANCH_NAME="upm/$(echo "$FOLDER" | tr '[:upper:]' '[:lower:]')"
+
+          echo "package=$FOLDER" >> $GITHUB_OUTPUT
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "upm_dir=$UPM_DIR" >> $GITHUB_OUTPUT
+          echo "branch=$BRANCH_NAME" >> $GITHUB_OUTPUT
+          echo "Package: $FOLDER, Version: $VERSION, UPM dir: $UPM_DIR, Branch: $BRANCH_NAME"
+
+      - name: Update package.json version
+        run: |
+          cd ${{ steps.info.outputs.upm_dir }}
+          jq '.version = "${{ steps.info.outputs.version }}"' package.json > package.tmp && mv package.tmp package.json
+          echo "Updated package.json:"
+          cat package.json
+
+      - name: Push to UPM branch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # Stage the version update so subtree split includes it
+          git add ${{ steps.info.outputs.upm_dir }}/package.json
+          git commit -m "chore: bump ${{ steps.info.outputs.package }} to ${{ steps.info.outputs.version }}" || true
+
+          # Subtree split: extract only the UPM package folder
+          SPLIT_BRANCH="upm-split-$$"
+          git subtree split --prefix=${{ steps.info.outputs.upm_dir }} -b "$SPLIT_BRANCH"
+
+          # Force-push to the UPM branch
+          git push origin "$SPLIT_BRANCH:${{ steps.info.outputs.branch }}" --force
+
+          # Clean up
+          git branch -D "$SPLIT_BRANCH"
+
+      - name: Tag UPM branch
+        run: |
+          UPM_TAG="${{ steps.info.outputs.branch }}/v${{ steps.info.outputs.version }}"
+          # Fetch the branch ref we just pushed
+          BRANCH_SHA=$(git ls-remote origin ${{ steps.info.outputs.branch }} | cut -f1)
+          git tag "$UPM_TAG" "$BRANCH_SHA"
+          git push origin "$UPM_TAG"
+          echo "Tagged: $UPM_TAG"

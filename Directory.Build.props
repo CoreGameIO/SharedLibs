@@ -1,0 +1,9 @@
+<Project>
+  <PropertyGroup>
+    <Authors>CoreGame.IO</Authors>
+    <Company>CoreGame.IO</Company>
+    <LangVersion>latest</LangVersion>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+</Project>
