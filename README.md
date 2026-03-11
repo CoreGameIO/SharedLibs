@@ -6,7 +6,7 @@ Deterministic fixed-point arithmetic for game logic. Q48.16 format backed by `lo
 
 - **Q48.16 format** — 48-bit integer part, 16-bit fractional part. Range: ~+/-140 trillion, precision: ~0.000015
 - **Integer-only arithmetic** — addition, subtraction, multiplication (128-bit safe), division (overflow-safe), modulo
-- **Math utilities** — Min, Max, Abs, Sign, Clamp, Lerp, Sqrt, Floor, Frac, rounding
+- **Math utilities** — Min, Max, Abs, Sign, Clamp, Lerp, Sqrt, PowInt, Log2, Floor, Frac, rounding
 - **Zero dependencies** — works standalone in Unity and .NET
 - **Serialization** — optional MemoryPack and MessagePack support (auto-detected in Unity via asmdef versionDefines)
 
@@ -37,9 +37,9 @@ Debug.Log($"HP: {remaining.ToFloat():F1}");
 
 ### Unity (UPM)
 
-Add via Package Manager using git URL or local path:
+Add via Package Manager → "Add package from git URL":
 ```
-https://github.com/CoreGameIO/SharedMeta.git?path=com.coregame.fixedpoint
+https://github.com/CoreGameIO/SharedLibs.git#upm/fixedpoint
 ```
 
 No dependencies required. MemoryPack/MessagePack serialization activates automatically when those packages are installed.
@@ -49,6 +49,8 @@ No dependencies required. MemoryPack/MessagePack serialization activates automat
 ```
 dotnet add package CoreGame.FixedPoint
 ```
+
+NuGet page: https://www.nuget.org/packages/CoreGame.FixedPoint
 
 ## API Reference
 
@@ -83,6 +85,8 @@ dotnet add package CoreGame.FixedPoint
 | `FpMath.Lerp(a, b, t)` | Linear interpolation |
 | `FpMath.LerpClamped(a, b, t)` | Lerp with t clamped to [0,1] |
 | `FpMath.Sqrt(a)` | Square root (Newton's method) |
+| `FpMath.PowInt(base, exp)` | Integer exponentiation (binary method) |
+| `FpMath.Log2(a)` | Log base 2 (bit-scan + repeated squaring) |
 | `FpMath.Floor(a)` | Integer part as Fp |
 | `FpMath.Frac(a)` | Fractional part |
 

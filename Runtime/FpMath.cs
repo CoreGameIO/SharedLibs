@@ -58,6 +58,76 @@ namespace CoreGame.FixedPoint
         public static Fp Floor(Fp a) => new Fp(a.RawValue & ~(Fp.ONE - 1));
 
         /// <summary>
+        /// Raise base to an integer power via repeated multiplication.
+        /// Negative exponents return Zero (no fractional results).
+        /// </summary>
+        public static Fp PowInt(Fp @base, int exponent)
+        {
+            if (exponent < 0) return Fp.Zero;
+            if (exponent == 0) return Fp.One;
+
+            Fp result = Fp.One;
+            Fp b = @base;
+            int e = exponent;
+            while (e > 0)
+            {
+                if ((e & 1) == 1) result = result * b;
+                b = b * b;
+                e >>= 1;
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// Log base 2 for positive values. Returns Zero for non-positive input.
+        /// Uses bit-scanning for integer part + repeated squaring for 16 fractional bits.
+        /// Fully deterministic — no floats.
+        /// </summary>
+        public static Fp Log2(Fp a)
+        {
+            if (a.RawValue <= 0) return Fp.Zero;
+
+            long val = a.RawValue;
+
+            // Integer part: find position of highest bit relative to Q48.16 format.
+            // In Q48.16, value 1.0 = 1<<16, so log2(1.0) = 0.
+            // log2(raw) = log2(raw) - 16
+            int intPart = -Fp.SHIFT;
+            long temp = val;
+            while (temp >= 2)
+            {
+                temp >>= 1;
+                intPart++;
+            }
+
+            // Normalize val to [1<<SHIFT, 2<<SHIFT) range
+            // val_normalized = val >> intPart (when intPart >= 0)
+            // or val_normalized = val << (-intPart) (when intPart < 0)
+            long norm;
+            if (intPart >= 0)
+                norm = val >> intPart;
+            else
+                norm = val << (-intPart);
+
+            // Now norm is in [ONE, 2*ONE), representing a value in [1.0, 2.0)
+            // Compute fractional bits via repeated squaring
+            long fracBits = 0;
+            for (int i = 0; i < Fp.SHIFT; i++)
+            {
+                // Square: norm = norm * norm / ONE
+                norm = (norm * norm) >> Fp.SHIFT;
+                if (norm >= (2L << Fp.SHIFT))
+                {
+                    norm >>= 1;
+                    fracBits |= (1L << (Fp.SHIFT - 1 - i));
+                }
+            }
+
+            long resultRaw = ((long)intPart << Fp.SHIFT) + fracBits;
+            return new Fp(resultRaw);
+        }
+
+        /// <summary>
         /// Integer square root (approximate, via Newton's method iterations).
         /// </summary>
         public static Fp Sqrt(Fp a)

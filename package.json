@@ -1,10 +1,13 @@
 {
   "name": "com.coregame.fixedpoint",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "displayName": "CoreGame FixedPoint",
   "description": "Deterministic fixed-point arithmetic (Q48.16) for game logic. Integer-only, cross-platform deterministic.",
   "unity": "6000.0",
   "unityRelease": "0f1",
+  "documentationUrl": "https://github.com/CoreGameIO/SharedLibs/tree/main/FixedPoint",
+  "changelogUrl": "https://github.com/CoreGameIO/SharedLibs/blob/main/FixedPoint/com.coregame.fixedpoint/CHANGELOG.md",
+  "licensesUrl": "https://github.com/CoreGameIO/SharedLibs/blob/main/FixedPoint/com.coregame.fixedpoint/LICENSE",
   "dependencies": {},
   "keywords": [
     "fixed-point",

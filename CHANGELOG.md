@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.0] - 2026-03-11
+
+### Added
+- `FpMath.PowInt(Fp base, int exponent)` — integer exponentiation via binary method
+- `FpMath.Log2(Fp a)` — log base 2 (bit-scan + repeated squaring), fully deterministic
+- LICENSE file (MIT)
+- `documentationUrl`, `changelogUrl`, `licensesUrl` in package.json
+
 ## [0.1.0] - 2026-03-09
 
 ### Added
