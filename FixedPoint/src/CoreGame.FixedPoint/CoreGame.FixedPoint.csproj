@@ -4,7 +4,7 @@
     <TargetFrameworks>netstandard2.1;net8.0;net10.0</TargetFrameworks>
     <RootNamespace>CoreGame.FixedPoint</RootNamespace>
     <PackageId>CoreGame.FixedPoint</PackageId>
-    <Version>0.1.0</Version>
+    <Version>0.2.0</Version>
     <Description>Deterministic fixed-point arithmetic (Q48.16). Integer-only, cross-platform deterministic.</Description>
     <PackageTags>fixed-point;deterministic;math;game</PackageTags>
     <IsPackable>true</IsPackable>

@@ -134,4 +134,67 @@ public class FpMathTests
         Fp result = FpMath.Sqrt(Fp.FromInt(1_000_000));
         Assert.InRange(result.ToFloat(), 999f, 1001f);
     }
+
+    [Fact]
+    public void PowInt_BasicCases()
+    {
+        // 2^0 = 1
+        Assert.Equal(Fp.One, FpMath.PowInt(Fp.FromInt(2), 0));
+        // 2^1 = 2
+        Assert.Equal(Fp.FromInt(2), FpMath.PowInt(Fp.FromInt(2), 1));
+        // 2^10 = 1024
+        Assert.Equal(Fp.FromInt(1024), FpMath.PowInt(Fp.FromInt(2), 10));
+        // 3^4 = 81
+        Assert.Equal(Fp.FromInt(81), FpMath.PowInt(Fp.FromInt(3), 4));
+    }
+
+    [Fact]
+    public void PowInt_Fractional()
+    {
+        // 1.5^2 = 2.25
+        Fp result = FpMath.PowInt(Fp.FromDecimal(1.5m), 2);
+        Assert.InRange(result.ToFloat(), 2.24f, 2.26f);
+    }
+
+    [Fact]
+    public void PowInt_Negative_Exponent_Returns_Zero()
+    {
+        Assert.Equal(Fp.Zero, FpMath.PowInt(Fp.FromInt(2), -1));
+    }
+
+    [Fact]
+    public void Log2_Powers_Of_Two()
+    {
+        // log2(1) = 0
+        Assert.InRange(FpMath.Log2(Fp.One).ToFloat(), -0.01f, 0.01f);
+        // log2(2) = 1
+        Assert.InRange(FpMath.Log2(Fp.FromInt(2)).ToFloat(), 0.99f, 1.01f);
+        // log2(4) = 2
+        Assert.InRange(FpMath.Log2(Fp.FromInt(4)).ToFloat(), 1.99f, 2.01f);
+        // log2(1024) = 10
+        Assert.InRange(FpMath.Log2(Fp.FromInt(1024)).ToFloat(), 9.99f, 10.01f);
+    }
+
+    [Fact]
+    public void Log2_Non_Powers()
+    {
+        // log2(3) ~ 1.585
+        Assert.InRange(FpMath.Log2(Fp.FromInt(3)).ToFloat(), 1.57f, 1.60f);
+        // log2(10) ~ 3.322
+        Assert.InRange(FpMath.Log2(Fp.FromInt(10)).ToFloat(), 3.30f, 3.35f);
+    }
+
+    [Fact]
+    public void Log2_NonPositive_Returns_Zero()
+    {
+        Assert.Equal(Fp.Zero, FpMath.Log2(Fp.Zero));
+        Assert.Equal(Fp.Zero, FpMath.Log2(Fp.FromInt(-5)));
+    }
+
+    [Fact]
+    public void Log2_Fractional_Input()
+    {
+        // log2(0.5) = -1
+        Assert.InRange(FpMath.Log2(Fp.Half).ToFloat(), -1.01f, -0.99f);
+    }
 }
