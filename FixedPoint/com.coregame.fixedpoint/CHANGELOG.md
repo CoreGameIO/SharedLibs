@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.2.1] - 2026-03-11
+
+### Fixed
+- UPM package: added LICENSE.meta for Unity compatibility
+
 ## [0.2.0] - 2026-03-11
 
 ### Added
