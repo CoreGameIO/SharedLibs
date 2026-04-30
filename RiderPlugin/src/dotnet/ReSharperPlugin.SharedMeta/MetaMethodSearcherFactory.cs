@@ -33,6 +33,16 @@ namespace ReSharperPlugin.SharedMeta
     [ShellComponent(Instantiation.DemandAnyThreadSafe)]
     public class MetaMethodSearcherFactory : DomainSpecificSearcherFactoryBase
     {
+        static MetaMethodSearcherFactory()
+        {
+            DiagLog.Write("MetaMethodSearcherFactory TYPE LOADED (static ctor)");
+        }
+
+        public MetaMethodSearcherFactory()
+        {
+            DiagLog.Write("MetaMethodSearcherFactory INSTANCE CREATED");
+        }
+
         public override bool IsCompatibleWithLanguage(PsiLanguageType languageType)
             => languageType.Is<CSharpLanguage>();
 
@@ -75,41 +85,16 @@ namespace ReSharperPlugin.SharedMeta
             }
         }
 
-        /// <summary>
-        /// Augments Go-To-Declaration / Ctrl+Click navigation with the SharedMeta
-        /// counterpart of the symbol under the cursor:
-        /// <list type="bullet">
-        ///   <item>on a generated client method (call site or declaration) the original
-        ///         <c>[MetaMethod]</c> on the <c>[MetaService]</c> interface is offered as
-        ///         an additional jump target;</item>
-        ///   <item>on a <c>[MetaMethod]</c> the generated counterparts are offered.</item>
-        /// </list>
-        /// In both cases <c>OriginalElementIsRelevant=true</c> keeps the standard target
-        /// (the method's own declaration) in the popup so the existing behaviour is not
-        /// replaced — the SharedMeta target is just appended to the choices.
-        /// </summary>
-        public override NavigateTargets GetNavigateToTargets(IDeclaredElement element)
-        {
-            if (element is not IMethod method) return new NavigateTargets();
-
-            if (MetaServiceMatcher.IsMetaMethod(method))
-            {
-                var solution = method.GetSolution();
-                var generated = MetaServiceMatcher.FindGeneratedCounterparts(method, solution);
-                if (generated.Count == 0) return new NavigateTargets();
-                DiagLog.Write($"GetNavigateToTargets(meta {method.ShortName}) -> {generated.Count} generated");
-                return new NavigateTargets(generated.Cast<IDeclaredElement>().ToList(), originalElementIsRelevant: true);
-            }
-
-            if (MetaServiceMatcher.IsGeneratedClientMethod(method))
-            {
-                var meta = MetaServiceMatcher.FindMetaMethodCounterpart(method);
-                if (meta == null) return new NavigateTargets();
-                DiagLog.Write($"GetNavigateToTargets(generated {method.ShortName}) -> meta {meta.GetContainingType()?.ShortName}.{meta.ShortName}");
-                return new NavigateTargets(meta, originalElementIsRelevant: true);
-            }
-
-            return new NavigateTargets();
-        }
+        // NOTE: GetNavigateToTargets was overridden in 0.3.0–0.3.2 to add the source
+        // [MetaMethod] as a Ctrl+Click target on generated client methods, but the
+        // override broke Rider's standard navigation in both directions:
+        //   - on a [MetaMethod] interface declaration the default "Go to Implementation"
+        //     lookup stopped finding the impl class
+        //   - on a generated method or its call site, returning a non-empty
+        //     NavigateTargets — even with originalElementIsRelevant=true — replaces
+        //     the default declaration target instead of augmenting it
+        // The hook is intentionally NOT overridden anymore; reverse navigation will
+        // come back via INavigateFromHereProvider (separate Navigate menu entry) in a
+        // later iteration once the SDK contract is properly understood.
     }
 }

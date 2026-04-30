@@ -31,6 +31,14 @@ namespace ReSharperPlugin.SharedMeta
         private static int _seq;
         private static readonly object Gate = new();
 
+        static DiagLog()
+        {
+            // Marker that this assembly version was loaded — useful to confirm
+            // a plugin upgrade actually took effect after a Rider restart.
+            Write("=== PLUGIN ASSEMBLY LOADED (ReSharperPlugin.SharedMeta) PID=" +
+                  System.Diagnostics.Process.GetCurrentProcess().Id);
+        }
+
         public static void Write(string line)
         {
             if (!Enabled) return;

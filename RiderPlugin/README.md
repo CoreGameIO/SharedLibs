@@ -22,6 +22,17 @@ counterparts. Result: **Find Usages on the interface method** surfaces every cal
 in the project, including those that go through cross-entity callers in arbitrary
 namespaces.
 
+In addition the plugin contributes two entries to Rider's **Ctrl+Shift+G "Navigate To"**
+popup:
+
+* on a generated client method — *"MetaService Method"* jumps to the originating
+  `[MetaMethod]` on the interface;
+* on a `[MetaMethod]` — *"Generated Client Method"* jumps to a counterpart.
+
+Standard Rider Ctrl+Click / Go to Implementation behaviour is left untouched (the
+override that briefly tried to inject targets there in 0.3.x was reverted because it
+replaced rather than augmented the default targets).
+
 ## Compatibility
 
 * **Rider 2025.3.4** (build `253.*`)
@@ -78,29 +89,44 @@ RiderPlugin/
     ├── Directory.Packages.props      opts out of parent CPM
     ├── ReSharperPlugin.SharedMeta.sln
     └── ReSharperPlugin.SharedMeta/
-        ├── ZoneMarker.cs                  ReSharper activation zones
-        ├── MetaServiceMatcher.cs          attribute-driven interface ↔ generated mapping
-        └── MetaMethodSearcherFactory.cs   Find Usages bridge
+        ├── ZoneMarker.cs                     ReSharper activation zones
+        ├── DiagLog.cs                        opt-in file logging (env-var gated)
+        ├── MetaServiceMatcher.cs             attribute-driven interface ↔ generated mapping
+        ├── MetaMethodSearcherFactory.cs      Find Usages bridge
+        └── MetaServiceNavigationProvider.cs  Ctrl+Shift+G popup contributor
 ```
 
-`MetaServiceMatcher` knows three attribute FQNs (`MetaService`, `MetaMethod`,
-`GeneratedFromMetaMethod`) and uses ReSharper's `AnnotatedMembersEx` index for the
-forward direction (interface → generated). The reverse direction (generated → interface)
-is a single attribute read on the generated method.
+`MetaServiceMatcher` is the single source of truth for the SharedMeta naming/attribute
+contract — it inspects `[MetaService]`, `[MetaMethod]`, and `[GeneratedFromMetaMethod]`
+attributes and finds counterparts in either direction.
 
 `MetaMethodSearcherFactory` subclasses `DomainSpecificSearcherFactoryBase` and overrides
 only `IsCompatibleWithLanguage` (C# only) and `GetRelatedDeclaredElements` (returns the
-matching counterparts).
+matching counterparts). This is what makes Find Usages bidirectional.
+
+`MetaServiceNavigationProvider` implements `INavigateFromHereImportantProvider` and
+contributes the *"MetaService Method"* / *"Generated Client Method"* entries to the
+Ctrl+Shift+G "Navigate To" popup.
+
+`DiagLog` writes structured timestamps to `%TEMP%/sharedmeta-rider-plugin.log` only
+when the environment variable `SHAREDMETA_RIDER_PLUGIN_DEBUG=1` is set at Rider start.
+Useful for diagnosing why the plugin's hooks aren't firing.
 
 ## Out of scope (planned for later)
 
+* **Right-click → Go To submenu integration.** That submenu is built from a static
+  IntelliJ-frontend action tree, not from ReSharper backend providers. The
+  documented `BackendAction` proxy + C# `[Action]`/`IExecutableAction` pattern was
+  attempted in 0.4.x but never registered the C# handler in Rider 2025.3 (verified
+  via DiagLog — the action class's static constructor is never invoked, indicating
+  the assembly is silently filtered from the action catalog despite all the
+  documented prerequisites). The next iteration will move to a pure-Kotlin frontend
+  Action with its own RD-protocol model into the backend.
 * **Inline "N usages" code-vision counter.** The hover popup shows the correct merged
   count via Find Usages, but the inline indicator above each method declaration is
   computed by `ReferencesCodeInsightsProvider` (an internal ReSharper provider) which
   doesn't consult `GetRelatedDeclaredElements`. Subclassing it is fragile across Rider
-  releases — deferred until we judge the cosmetic gap worth the maintenance cost.
-* **Explicit "Go to MetaService method" / "Go to ApiClient method" actions.** Standard
-  Find Usages plus Ctrl+Click on the call site cover most navigation today.
+  releases.
 * Triggers (`[Trigger]`) and subscribers (`SubscriberInterfaces` on `[MetaService]`).
 * Gutter icons.
 * JetBrains Marketplace publishing — local zip only.
