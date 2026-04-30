@@ -18,6 +18,16 @@
     ]]></description>
 
     <change-notes><![CDATA[
+        <h3>0.6.0</h3>
+        <ul>
+            <li><b>Right-click → Go To → "SharedMeta Navigate To…"</b> — opens the
+                same "Navigate To" popup as Ctrl+Shift+G, which lists the
+                SharedMeta interface ↔ generated counterpart entries alongside
+                Rider's standard navigations. Trade-off: one extra popup click
+                vs a direct jump (the entries' backend execution delegates are
+                not addressable from the JVM frontend without a custom RD model,
+                which is deferred to a future iteration).</li>
+        </ul>
         <h3>0.5.0</h3>
         <ul>
             <li><b>Ctrl+Shift+G "Navigate To" popup</b> — adds a <i>"MetaService Method"</i>
@@ -62,21 +72,37 @@
     <depends>com.intellij.modules.rider</depends>
 
     <extensions defaultExtensionNs="com.intellij">
-        <!-- No frontend extensions — all real logic lives in the .NET backend. -->
+        <!-- All SharedMeta-specific logic lives on the .NET backend. -->
     </extensions>
 
     <!--
-        Right-click → Go To submenu integration is intentionally NOT implemented in
-        this version. Attempting to publish a frontend BackendAction that proxies to
-        a C# [Action]/IExecutableAction handler (the pattern documented for ReSharper
-        plugins) consistently fails to register the C# handler in Rider 2025.3 — the
-        decorated class never has its static constructor invoked, indicating the
-        plugin assembly is not surfaced to the action catalog. The dynamic
-        Ctrl+Shift+G "Navigate To" popup is fed by INavigateFromHereProvider and
-        works fine (see MetaServiceNavigationProvider on the .NET side); the static
-        right-click submenu would need a different integration path (likely a pure
-        Kotlin frontend Action with a custom RD model) which is deferred.
+        Right-click → Go To and the global Navigate menu are populated from a
+        static IntelliJ-side action tree, not from the dynamic ReSharper
+        INavigateFromHereProvider stream. We could not get a backend
+        IExecutableAction registered in Rider 2025.3 (verified via DiagLog —
+        the action class is never reflected by the ReSharper action catalog
+        despite [Action] / [ShellComponent] / IInsertLast / numeric Id and
+        every documented prerequisite), so this version takes a simpler route:
+        a pure-Kotlin AnAction whose only job is to re-trigger the standard
+        "Navigate To" popup. The popup itself already lists our SharedMeta
+        entries (contributed by MetaServiceNavigationProvider on the backend),
+        so the user lands one extra click away from a direct jump. Trade-off
+        documented in the Kotlin source.
     -->
+    <actions>
+        <action id="SharedMetaGoToAction"
+                class="com.coregame.sharedmeta.rider.SharedMetaGoToAction"
+                text="SharedMeta Navigate To…"
+                description="Open the Navigate To popup, which lists the SharedMeta interface ↔ generated counterpart entries alongside the standard Rider navigation actions.">
+            <!-- No default keyboard shortcut — Ctrl+M and most other comfortable
+                 chords are already bound in user keymaps (notably the ReSharper
+                 keymap), so a hard-wired binding here is silently swallowed.
+                 Users who want a shortcut should set it in Settings → Keymap →
+                 search for "SharedMeta Navigate To". -->
+            <add-to-group group-id="EditorPopupMenu.GoTo" anchor="last"/>
+            <add-to-group group-id="GoToTargetEx" anchor="last"/>
+        </action>
+    </actions>
 
     <applicationListeners>
     </applicationListeners>

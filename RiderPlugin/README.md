@@ -29,6 +29,12 @@ popup:
   `[MetaMethod]` on the interface;
 * on a `[MetaMethod]` — *"Generated Client Method"* jumps to a counterpart.
 
+Those entries are also reachable through **Right-click → Go To → "SharedMeta Navigate
+To…"** (and via the global **Navigate** menu) — the menu item opens the same popup, so
+the entries appear next to Rider's standard navigations. There's an extra popup click
+versus a direct jump; making it one-click would require a custom RD-protocol model
+between the JVM frontend and the .NET backend, which is deferred.
+
 Standard Rider Ctrl+Click / Go to Implementation behaviour is left untouched (the
 override that briefly tried to inject targets there in 0.3.x was reverted because it
 replaced rather than augmented the default targets).
@@ -81,7 +87,8 @@ RiderPlugin/
 ├── settings.gradle.kts
 ├── gradle.properties                 plugin/SDK versions
 ├── gradle/libs.versions.toml         plugin catalog
-├── src/main/kotlin/                  empty stub (front-end has no logic)
+├── src/main/kotlin/com/coregame/sharedmeta/rider/
+│   └── SharedMetaGoToAction.kt       opens the Navigate To popup from Right-click → Go To
 ├── src/main/resources/META-INF/
 │   └── plugin.xml                    plugin manifest
 └── src/dotnet/
@@ -114,14 +121,16 @@ Useful for diagnosing why the plugin's hooks aren't firing.
 
 ## Out of scope (planned for later)
 
-* **Right-click → Go To submenu integration.** That submenu is built from a static
-  IntelliJ-frontend action tree, not from ReSharper backend providers. The
-  documented `BackendAction` proxy + C# `[Action]`/`IExecutableAction` pattern was
-  attempted in 0.4.x but never registered the C# handler in Rider 2025.3 (verified
-  via DiagLog — the action class's static constructor is never invoked, indicating
-  the assembly is silently filtered from the action catalog despite all the
-  documented prerequisites). The next iteration will move to a pure-Kotlin frontend
-  Action with its own RD-protocol model into the backend.
+* **One-click direct navigation from Right-click → Go To.** The current entry opens
+  the same "Navigate To" popup as Ctrl+Shift+G, so the user lands on the SharedMeta
+  target with one extra click. Skipping the popup would require a custom RD-protocol
+  model so the frontend Action can ask the backend "give me the target file/offset
+  for this cursor" and navigate to the result directly. Two earlier attempts hit
+  walls — the documented `BackendAction` proxy + C# `[Action]`/`IExecutableAction`
+  pattern silently failed to register the C# handler in Rider 2025.3 (verified via
+  DiagLog: the action class's static constructor is never invoked), and the popup
+  entries' `actionId` is not exposed to the JVM `ActionManager` (also verified).
+  RD-model bridging is the only viable path and is left for a future iteration.
 * **Inline "N usages" code-vision counter.** The hover popup shows the correct merged
   count via Find Usages, but the inline indicator above each method declaration is
   computed by `ReferencesCodeInsightsProvider` (an internal ReSharper provider) which
