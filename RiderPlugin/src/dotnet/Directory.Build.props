@@ -1,0 +1,20 @@
+<Project>
+    <PropertyGroup>
+        <LangVersion>latest</LangVersion>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>disable</ImplicitUsings>
+        <NoWarn>$(NoWarn);CS1591;NU1701</NoWarn>
+
+        <!--
+            Opt out of the parent SharedLibs Central Package Management. The plugin needs
+            to pin its own Rider SDK version independently and the parent props don't
+            declare JetBrains.Rider.SDK. Setting this to false here causes the local
+            Directory.Packages.props (alongside this file) to win over the ancestor one.
+        -->
+        <ManagePackageVersionsCentrally>false</ManagePackageVersionsCentrally>
+
+        <!-- Pinned to the Rider 2025.3.4 SDK build -->
+        <RiderSdkVersion>2025.3.4</RiderSdkVersion>
+        <WaveVersion>253.0</WaveVersion>
+    </PropertyGroup>
+</Project>

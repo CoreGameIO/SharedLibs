@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <TargetFramework>net8.0</TargetFramework>
+        <AssemblyName>ReSharperPlugin.SharedMeta</AssemblyName>
+        <RootNamespace>ReSharperPlugin.SharedMeta</RootNamespace>
+
+        <!-- Required for Rider/ReSharper plugin assemblies -->
+        <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+        <UseSharedCompilation>false</UseSharedCompilation>
+        <DebugType>portable</DebugType>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <!--
+            JetBrains.Rider.SDK pulls in the full ReSharper SDK suitable for Rider plugin development.
+            The version must align with the Rider build the plugin targets (see Directory.Build.props).
+        -->
+        <PackageReference Include="JetBrains.Rider.SDK" Version="$(RiderSdkVersion)" PrivateAssets="all" />
+
+        <!--
+            Pin TraceSource directly to break the transitive version conflict between
+            Castle.Core 4.4.1 (>= 4.3.0) pulled in by JetBrains.Psi.Features.test.Framework
+            and JetBrains.Rider.External.Iis (= 4.0.0). A direct reference takes precedence
+            over both transitive constraints.
+        -->
+        <PackageReference Include="System.Diagnostics.TraceSource" Version="4.3.0" />
+    </ItemGroup>
+</Project>

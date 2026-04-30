@@ -1,0 +1,12 @@
+[versions]
+# Kotlin must be ≥ 2.2 — Rider 2025.3 ships kotlin_module metadata version
+# 2.2.0 in its bundled jars, and an older compiler chokes with
+# "Module was compiled with an incompatible version of Kotlin".
+kotlin = "2.2.0"
+# IntelliJ Platform Gradle Plugin 2.x — required for the modern
+# `intellijPlatform { rider(...) }` DSL used in build.gradle.kts.
+intellijPlatform = "2.1.0"
+
+[plugins]
+kotlin = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+intellijPlatform = { id = "org.jetbrains.intellij.platform", version.ref = "intellijPlatform" }

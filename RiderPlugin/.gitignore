@@ -1,0 +1,21 @@
+# Gradle
+.gradle/
+build/
+out/
+.intellijPlatform/
+!gradle/wrapper/gradle-wrapper.jar
+
+# IDE
+.idea/
+*.iml
+
+# .NET
+**/bin/
+**/obj/
+*.user
+*.suo
+
+# Distributables — Gradle's build output is ignored, but the curated zip
+# under dist/ ships with the repo so users can install without building.
+*.zip
+!dist/*.zip

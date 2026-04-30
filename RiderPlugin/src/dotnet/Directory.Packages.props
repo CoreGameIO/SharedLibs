@@ -1,0 +1,12 @@
+<Project>
+    <!--
+        Hard-shadows the ancestor SharedLibs/Directory.Packages.props so its
+        ManagePackageVersionsCentrally=true does not apply to the plugin tree.
+        Combined with ManagePackageVersionsCentrally=false in the sibling
+        Directory.Build.props this lets the plugin csproj keep classic
+        per-PackageReference Version attributes.
+    -->
+    <PropertyGroup>
+        <ManagePackageVersionsCentrally>false</ManagePackageVersionsCentrally>
+    </PropertyGroup>
+</Project>
